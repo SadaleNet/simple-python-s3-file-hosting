@@ -1,11 +1,26 @@
-<form action="{{ post['url'] }}" method="post" enctype="multipart/form-data">
+<form id="uploadForm" action="{{ post['url'] }}" method="post" enctype="multipart/form-data">
 Key to upload: 
 {% for attribute in post['fields'] %}
 <input type="hidden" name="{{ attribute }}" value="{{ post['fields'][attribute] }}" />
 {% endfor %}
 
 File: 
-<input type="file" id="your-files" name="file" /> <br />
+<input type="file" name="file" id="file" /> <br />
 <!-- The elements after this will be ignored -->
 <input type="submit" name="submit" value="Upload to Amazon S3" />
 </form>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script>
+$("#uploadForm #file").on("change", function(eventObject) {
+	if(this.files.length>0){
+		var file = this.files[0]
+		if(file.size<={{ fileSizeLimit }}){
+			$("#uploadForm input[name=Content-Type]").val(file.type);
+		}else{
+			this.value = "";
+			window.alert("FAILED! File too large!");
+		}
+	}
+});
+</script>
