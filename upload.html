@@ -1,0 +1,11 @@
+<form action="{{ post['url'] }}" method="post" enctype="multipart/form-data">
+Key to upload: 
+{% for attribute in post['fields'] %}
+<input type="hidden" name="{{ attribute }}" value="{{ post['fields'][attribute] }}" />
+{% endfor %}
+
+File: 
+<input type="file" id="your-files" name="file" /> <br />
+<!-- The elements after this will be ignored -->
+<input type="submit" name="submit" value="Upload to Amazon S3" />
+</form>
