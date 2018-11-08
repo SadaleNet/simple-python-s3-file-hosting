@@ -18,7 +18,7 @@ def upload():
         Bucket=os.getenv('AWS_BUCKET'),
         Key=str(uuid.uuid4())+'/${filename}',
         Conditions=[
-            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, 50*1024*1024]
+            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(os.getenv('AWS_MAX_FILE_SIZE'))]
         ],
         Fields={"acl": "public-read", "success_action_redirect": f"{flask.request.url_root}uploaded", "Content-Type": "image/png"}
     )
