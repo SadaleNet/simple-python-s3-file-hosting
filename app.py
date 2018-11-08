@@ -15,10 +15,10 @@ def upload():
         template = Template(f.read())
     s3 = boto3.client('s3')
     post = s3.generate_presigned_post(
-        Bucket=os.getenv('AWS_BUCKET'),
+        Bucket=os.getenv('S3_BUCKET'),
         Key=str(uuid.uuid4())+'/${filename}',
         Conditions=[
-            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(os.getenv('AWS_MAX_FILE_SIZE'))]
+            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(os.getenv('S3_MAX_FILE_SIZE'))]
         ],
         Fields={"acl": "public-read", "success_action_redirect": f"{flask.request.url_root}uploaded", "Content-Type": "image/png"}
     )
@@ -33,4 +33,4 @@ def uploaded():
 def result(filename):
     with open('result.html') as f:
         template = Template(f.read())
-    return template.render(fileName=f"{os.getenv('AWS_URL_ROOT')}/{urllib.parse.quote(filename)}")
+    return template.render(fileName=f"{os.getenv('S3_URL_ROOT')}/{urllib.parse.quote(filename)}")
