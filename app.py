@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import boto3
+import botocore
 import uuid
 import urllib
 import os
@@ -20,21 +21,41 @@ def upload():
     s3 = boto3.client('s3')
     post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
-        Key=str(uuid.uuid4())+'_${filename}',
+        Key='upload_'+str(uuid.uuid4()),
         Conditions=[
-            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
+            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
-        Fields={"acl": "public-read", "success_action_redirect": f"{flask.request.url_root}uploaded", "Content-Type": "binary/octet-stream"}
+        Fields={"success_action_redirect": f"{flask.request.url_root}uploaded", "Content-Type": "binary/octet-stream"}
     )
     return template.render(post=post, fileSizeLimit=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))
 
 @app.route("/uploaded")
 def uploaded():
-    #TODO: secure it. Only accept redirections originating from Amazon
-    return flask.redirect(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{urllib.parse.quote(flask.request.args.get('key'))}", code=302)
+    s3 = boto3.client('s3')
+    filename_suffix = flask.request.args.get('key').split('_',1)[1]
+    destination_path = f"view_{filename_suffix}"
+    try:
+        s3.head_object(
+            Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
+            Key=destination_path
+        )
+    except botocore.exceptions.ClientError as e:
+        print('NOT FOUND!')
+        if e.response['Error']['Code'] == '404':
+            s3.copy_object(
+                Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
+                CopySource=f"{get_s3_current_servicec_provider_envvar('BUCKET')}/{flask.request.args.get('key')}",
+                Key=destination_path,
+                ACL="public-read"
+            )
+    s3.delete_object(
+        Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
+        Key=flask.request.args.get('key')
+    )
+    return flask.redirect(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{filename_suffix}", code=302)
 
 @app.route('/view/<string:service_provider>/<string:filename>')
 def result(service_provider, filename):
     with open('result.html') as f:
         template = Template(f.read())
-    return template.render(fileName=f"{get_s3_current_servicec_provider_envvar('URL_ROOT')}/{urllib.parse.quote(filename)}")
+    return template.render(fileName=f"{get_s3_current_servicec_provider_envvar('URL_ROOT')}/view_{urllib.parse.quote(filename)}")
