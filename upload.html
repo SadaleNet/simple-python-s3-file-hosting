@@ -5,14 +5,83 @@ File:
 <input type="file" name="file" id="file" /><br />
 <!-- Don't name this button "submit" or jQuery will get confused -->
 <button id="upload_button" disabled>Upload to Amazon S3</button>
+<progress id="progress" max="1" value="0">
 </form>
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 
 <script>
+/*
+	$.ajax({
+    xhr: function() {
+        var xhr = new window.XMLHttpRequest();
+        xhr.upload.addEventListener("progress", function(evt) {
+            if (evt.lengthComputable) {
+                var percentComplete = evt.loaded / evt.total;
+                //Do something with upload progress here
+            }
+       }, false);
+
+       return xhr;
+    },
+    type: 'POST',
+    url: "/",
+    data: {},
+    success: function(data){
+        //Do something on success
+    }
+});
+*/
+
+function obtain_presigned_url(){
+	$.getJSON('/get_presigned_post', (data) => {
+		//Put the fields and action URL into the form
+		$('#uploadForm').attr("action", data['url']);
+		$('#presign_post_attributes').empty();
+		for (var attribute in data['fields']){
+			$('#presign_post_attributes').append(
+				`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
+			);
+		}
+
+		//Send the request
+		$.ajax({
+			xhr: () => {
+				var xhr = new window.XMLHttpRequest();
+				xhr.upload.addEventListener("progress", (event) => {
+					if (event.lengthComputable) {
+						$('#progress').val(event.loaded/event.total);
+					}
+			   }, false);
+
+			   return xhr;
+			},
+			method: 'POST',
+			url: $('#uploadForm').attr('action'),
+			data: new FormData($('#uploadForm')[0]),
+			crossDomain: true,
+			processData: false,
+			contentType: false,
+			error: (xhr) => { //HTTP 3xx is also counted as an error
+				console.log(xhr);
+				if (xhr.status == 302) {
+					location.href = xhr.getResponseHeader("Location");
+				}else{
+					alert("Something went wrong!")
+				}
+			},
+			success: (data) => {
+				console.log(data);
+				location.href = data;
+			}
+		});
+
+	});
+}
+
 $("#uploadForm #file").on("change", function(eventObject) {
 	if(this.files.length>0){
-		var file = this.files[0]
+		var file = this.files[0];
 		if(file.size<={{ fileSizeLimit }}){
 			$("#uploadForm input[name=Content-Type]").val(file.type);
 			$("#uploadForm #upload_button").prop('disabled', false);
@@ -24,22 +93,9 @@ $("#uploadForm #file").on("change", function(eventObject) {
 	}
 });
 
-var submitted = false;
-$('#uploadForm').submit(function(){
-	if(!submitted){
-		$.getJSON('/get_presigned_post', function(data){
-			submitted = true;
-			$('#uploadForm').attr("action", data['url']);
-			$('#presign_post_attributes').empty();
-			for (var attribute in data['fields']){
-				$('#presign_post_attributes').append(
-					`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
-				);
-			}
-			$('#uploadForm').submit();
-		});
-		return false;
-	}
-	console.log('OK');
+$('#uploadForm').submit(() => {
+	$("#uploadForm #upload_button").prop('disabled', true);
+	obtain_presigned_url();
+	return false;
 });
 </script>

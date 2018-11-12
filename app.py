@@ -7,6 +7,7 @@ import os
 from flask import Flask
 import flask
 from jinja2 import Template
+from crossdomain import crossdomain
 app = Flask(__name__)
 
 def get_s3_current_servicec_provider_envvar(var):
@@ -34,9 +35,15 @@ def get_presigned_post():
     )
     return flask.jsonify(presigned_post)
 
-@app.route("/uploaded")
+@app.route("/uploaded", methods=['GET', 'OPTIONS'])
 def uploaded():
-    return flask.redirect(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{flask.request.args.get('key')}", code=302)
+    if flask.request.method == 'OPTIONS':
+        response = flask.Response("")
+    else:
+        response = flask.Response(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{flask.request.args.get('key')}")
+    response.headers['Access-Control-Allow-Origin'] = "*"
+    response.headers['Access-Control-Allow-Methods'] = "GET"
+    return response
 
 @app.route('/view/<string:service_provider>/<string:filename>')
 def result(service_provider, filename):
