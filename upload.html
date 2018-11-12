@@ -1,26 +1,45 @@
-<form id="uploadForm" action="{{ post['url'] }}" method="post" enctype="multipart/form-data">
-Key to upload: 
-{% for attribute in post['fields'] %}
-<input type="hidden" name="{{ attribute }}" value="{{ post['fields'][attribute] }}" />
-{% endfor %}
-
+<form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
+<div id="presign_post_attributes"></div>
 File: 
-<input type="file" name="file" id="file" /> <br />
-<!-- The elements after this will be ignored -->
-<input type="submit" name="submit" value="Upload to Amazon S3" />
+<input type="hidden" name="Content-Type" />
+<input type="file" name="file" id="file" /><br />
+<!-- Don't name this button "submit" or jQuery will get confused -->
+<button id="upload_button" disabled>Upload to Amazon S3</button>
 </form>
 
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
 <script>
 $("#uploadForm #file").on("change", function(eventObject) {
 	if(this.files.length>0){
 		var file = this.files[0]
 		if(file.size<={{ fileSizeLimit }}){
 			$("#uploadForm input[name=Content-Type]").val(file.type);
+			$("#uploadForm #upload_button").prop('disabled', false);
 		}else{
 			this.value = "";
 			window.alert("FAILED! File too large!");
+			$("#uploadForm #upload_button").prop('disabled', true);
 		}
 	}
+});
+
+var submitted = false;
+$('#uploadForm').submit(function(){
+	if(!submitted){
+		$.getJSON('/get_presigned_post', function(data){
+			submitted = true;
+			$('#uploadForm').attr("action", data['url']);
+			$('#presign_post_attributes').empty();
+			for (var attribute in data['fields']){
+				$('#presign_post_attributes').append(
+					`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
+				);
+			}
+			$('#uploadForm').submit();
+		});
+		return false;
+	}
+	console.log('OK');
 });
 </script>
