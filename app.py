@@ -30,9 +30,9 @@ def get_presigned_post():
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
         Key=str(uuid.uuid4()),
         Conditions=[
-            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
+            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
-        Fields={"success_action_redirect": f"{flask.request.url_root}uploaded"},
+        Fields={"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}", "success_action_redirect": f"{flask.request.url_root}uploaded"},
         ExpiresIn=S3_UPLOAD_GRACE_PERIOD
     )
     return flask.jsonify(presigned_post)
