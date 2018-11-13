@@ -1,40 +1,31 @@
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
 <form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
 <div id="presign_post_attributes"></div>
 File: 
 <input type="hidden" name="Content-Type" />
 <input type="file" name="file" id="file" /><br />
+
+{% if captcha_enabled %}
+<div id='recaptcha' class="g-recaptcha" data-sitekey="{{ captcha_site_key }}" data-callback="start_upload_file" data-size="invisible"></div>
+{% endif %}
+
 <!-- Don't name this button "submit" or jQuery will get confused -->
 <button id="upload_button" disabled>Upload to Amazon S3</button>
+
 <progress id="progress" max="1" value="0">
 </form>
 
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+{% if captcha_enabled %}
+	<script src='https://www.google.com/recaptcha/api.js'></script>
+{% endif %}
 
 <script>
-/*
-	$.ajax({
-    xhr: function() {
-        var xhr = new window.XMLHttpRequest();
-        xhr.upload.addEventListener("progress", function(evt) {
-            if (evt.lengthComputable) {
-                var percentComplete = evt.loaded / evt.total;
-                //Do something with upload progress here
-            }
-       }, false);
+function start_upload_file(captcha_token=''){
+	$("#uploadForm #upload_button").prop('disabled', true);
 
-       return xhr;
-    },
-    type: 'POST',
-    url: "/",
-    data: {},
-    success: function(data){
-        //Do something on success
-    }
-});
-*/
-
-function obtain_presigned_url(){
-	$.getJSON('/get_presigned_post', (data) => {
+	//Request for a presigned POST URL
+	$.post('/get_presigned_post', {'g-recaptcha-response': captcha_token}, (data) => {
 		//Put the fields and action URL into the form
 		$('#uploadForm').attr("action", data['url']);
 		$('#presign_post_attributes').empty();
@@ -70,7 +61,11 @@ function obtain_presigned_url(){
 			}
 		});
 
-	});
+	}, 'json').fail(
+		function(jqXHR, statusCode) {
+			window.alert(jqXHR.responseText);
+		}
+	)
 }
 
 $("#uploadForm #file").on("change", function(eventObject) {
@@ -88,8 +83,11 @@ $("#uploadForm #file").on("change", function(eventObject) {
 });
 
 $('#uploadForm').submit(() => {
-	$("#uploadForm #upload_button").prop('disabled', true);
-	obtain_presigned_url();
+{% if captcha_enabled %}
+	grecaptcha.execute();
+{% else %}
+	start_upload_file();
+{% endif %}
 	return false;
 });
 </script>

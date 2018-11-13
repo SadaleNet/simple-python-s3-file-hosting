@@ -2,7 +2,9 @@
 import boto3
 import botocore
 import uuid
-import urllib
+import urllib.parse
+import urllib.request
+import json
 import os
 from flask import Flask
 import flask
@@ -15,15 +17,33 @@ S3_UPLOAD_GRACE_PERIOD = 10
 def get_s3_current_servicec_provider_envvar(var):
     return os.getenv(f"S3_{os.getenv('S3_CURRENT_SERVICE_PROVIDER')}_{var}")
 
+def is_captcha_enabled():
+    return os.getenv('CAPTCHA_ENABLED', 'N').upper() != 'N'
+
 @app.route("/")
 def homepage():
     print(flask.request.url_root)
     with open('upload.html') as f:
         template = Template(f.read())
-    return template.render(fileSizeLimit=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))
+    return template.render(
+            fileSizeLimit=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
+            captcha_enabled=is_captcha_enabled(),
+            captcha_site_key=os.getenv('CAPTCHA_SITE_KEY', '')
+        )
 
-@app.route("/get_presigned_post")
+@app.route("/get_presigned_post", methods=['POST'])
 def get_presigned_post():
+    if is_captcha_enabled():
+        print(flask.request.args.get('g-recaptcha-response'))
+        request = urllib.request.Request('https://www.google.com/recaptcha/api/siteverify',
+            data=urllib.parse.urlencode(
+                {'secret': os.getenv('CAPTCHA_SECRET_KEY'), 'response': flask.request.form.get('g-recaptcha-response')}
+            ).encode(),
+        method='POST')
+        response = urllib.request.urlopen(request)
+        if not json.loads(response.read().decode('utf-8'))["success"]:
+            return flask.Response("INVALID CAPTCHA!", status=401)
+
     s3 = boto3.client('s3')
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
