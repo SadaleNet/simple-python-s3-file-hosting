@@ -10,9 +10,11 @@ from jinja2 import Template
 from crossdomain import crossdomain
 app = Flask(__name__)
 
+S3_UPLOAD_GRACE_PERIOD = 30
+S3_ACCESS_GRACE_PERIOD = 30
+
 def get_s3_current_servicec_provider_envvar(var):
     return os.getenv(f"S3_{os.getenv('S3_CURRENT_SERVICE_PROVIDER')}_{var}")
-
 
 @app.route("/")
 def homepage():
@@ -28,10 +30,10 @@ def get_presigned_post():
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
         Key=str(uuid.uuid4()),
         Conditions=[
-            {"acl": "public-read"}, {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
+            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
-        Fields={"acl": "public-read", "success_action_redirect": f"{flask.request.url_root}uploaded"},
-        ExpiresIn=30
+        Fields={"success_action_redirect": f"{flask.request.url_root}uploaded"},
+        ExpiresIn=S3_UPLOAD_GRACE_PERIOD
     )
     return flask.jsonify(presigned_post)
 
@@ -49,4 +51,12 @@ def uploaded():
 def result(service_provider, filename):
     with open('result.html') as f:
         template = Template(f.read())
-    return template.render(fileName=f"{get_s3_current_servicec_provider_envvar('URL_ROOT')}/{urllib.parse.quote(filename)}")
+    s3 = boto3.client('s3')
+    presignedUrl = s3.generate_presigned_url('get_object',
+        Params = {
+            'Bucket': get_s3_current_servicec_provider_envvar("BUCKET"),
+            'Key': filename
+        },
+        ExpiresIn=S3_ACCESS_GRACE_PERIOD
+    )
+    return template.render(fileName=presignedUrl)
