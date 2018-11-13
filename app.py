@@ -27,7 +27,7 @@ def get_presigned_post():
     s3 = boto3.client('s3')
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
-        Key=str(uuid.uuid4()),
+        Key=get_s3_current_servicec_provider_envvar('PREFIX')+str(uuid.uuid4())+get_s3_current_servicec_provider_envvar('SUFFIX'),
         Conditions=[
             {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
@@ -41,12 +41,12 @@ def uploaded():
     if flask.request.method == 'OPTIONS':
         response = flask.Response("")
     else:
-        response = flask.Response(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{flask.request.args.get('key')}")
+        response = flask.Response(f"/view/{os.getenv(f'S3_CURRENT_SERVICE_PROVIDER')}/{urllib.parse.quote(flask.request.args.get('key'))}")
     response.headers['Access-Control-Allow-Origin'] = "*"
     response.headers['Access-Control-Allow-Methods'] = "GET"
     return response
 
-@app.route('/view/<string:service_provider>/<string:filename>')
+@app.route('/view/<string:service_provider>/<path:filename>')
 def result(service_provider, filename):
     with open('result.html') as f:
         template = Template(f.read())
