@@ -2,10 +2,12 @@ Done!<br>
 <a href="/">Back</a><br/>
 
 <object data="{{ fileName }}">
-	Preview failed. Downloading the file...
-	<iframe src="{{ fileName }}" style="display:none;"></iframe>
 </object>
 <br/>
+
+<form action="{{ fileName }}">
+    <button>Download</button>
+</form>
 
 Direct link: <br/>
 {{ fileName }}  <br/>
