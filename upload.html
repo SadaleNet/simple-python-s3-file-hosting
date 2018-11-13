@@ -62,16 +62,10 @@ function obtain_presigned_url(){
 			crossDomain: true,
 			processData: false,
 			contentType: false,
-			error: (xhr) => { //HTTP 3xx is also counted as an error
-				console.log(xhr);
-				if (xhr.status == 302) {
-					location.href = xhr.getResponseHeader("Location");
-				}else{
-					alert("Something went wrong!")
-				}
+			error: (xhr) => {
+				alert("TODO: Something went wrong!")
 			},
 			success: (data) => {
-				console.log(data);
 				location.href = data;
 			}
 		});
