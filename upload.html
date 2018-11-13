@@ -79,6 +79,8 @@ $("#uploadForm #file").on("change", function(eventObject) {
 			window.alert("FAILED! File too large!");
 			$("#uploadForm #upload_button").prop('disabled', true);
 		}
+	}else{
+		$("#uploadForm #upload_button").prop('disabled', true);
 	}
 });
 
