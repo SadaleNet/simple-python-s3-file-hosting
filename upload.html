@@ -53,8 +53,8 @@ function start_upload_file(captcha_token=''){
 			crossDomain: true,
 			processData: false,
 			contentType: false,
-			error: (xhr) => {
-				alert("TODO: Something went wrong!")
+			error: (jqXHR) => {
+				alert("TODO: Something went wrong!\n"+jqXHR.responseText)
 			},
 			success: (data) => {
 				location.href = data;
