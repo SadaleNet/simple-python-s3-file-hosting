@@ -36,7 +36,8 @@ def homepage():
     return template.render(
             fileSizeLimit=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
             captcha_enabled=is_captcha_enabled(),
-            captcha_site_key=os.getenv('CAPTCHA_SITE_KEY', '')
+            captcha_site_key=os.getenv('CAPTCHA_SITE_KEY', ''),
+            upload_rate_limit=os.getenv('UPLOAD_RATE_LIMIT', '')
         )
 
 @app.route("/get_presigned_post", methods=['POST'])
