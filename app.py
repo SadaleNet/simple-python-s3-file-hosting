@@ -8,9 +8,17 @@ import json
 import os
 from flask import Flask
 import flask
+import flask_limiter
+import flask_limiter.util
 from jinja2 import Template
 from crossdomain import crossdomain
 app = Flask(__name__)
+limiter = flask_limiter.Limiter(
+    app,
+    key_func=flask_limiter.util.get_remote_address,
+    storage_uri=os.getenv('UPLOAD_RATE_LIMIT_STORAGE', 'memory://'),
+    key_prefix="rate_limiter:"
+)
 
 S3_UPLOAD_GRACE_PERIOD = 10
 
@@ -32,6 +40,7 @@ def homepage():
         )
 
 @app.route("/get_presigned_post", methods=['POST'])
+@limiter.limit(os.getenv('UPLOAD_RATE_LIMIT', ''), error_message="Daily upload limit exceeded.\nPlease try again tomorrow.")
 def get_presigned_post():
     if is_captcha_enabled():
         print(flask.request.args.get('g-recaptcha-response'))
@@ -71,3 +80,7 @@ def result(service_provider, filename):
     with open('result.html') as f:
         template = Template(f.read())
     return template.render(fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}")
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return flask.Response(e.description, status=401)
