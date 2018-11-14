@@ -1,99 +1,153 @@
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta name="description" content="Simple temporary file hosting service">
 
-{% if upload_rate_limit != "" %}
-Maximum file uploads per IP address: {{ upload_rate_limit }}<br>
-{% endif %}
+		<title>{{ service_name }}</title>
 
-<form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
-<div id="presign_post_attributes"></div>
-File: 
-<input type="hidden" name="Content-Type" />
-<input type="file" name="file" id="file" /><br />
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	</head>
 
-{% if captcha_enabled %}
-<div id='recaptcha' class="g-recaptcha" data-sitekey="{{ captcha_site_key }}" data-callback="start_upload_file" data-size="invisible"></div>
-{% endif %}
+	<body>
+		<div style="min-height: 100vh;">
+			<nav class="navbar navbar-expand-lg navbar-light bg-light">
+				<a class="navbar-brand" href="/">{{ service_name }}</a>
+					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarItems" aria-controls="navbarItems" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+					</button>
 
-<!-- Don't name this button "submit" or jQuery will get confused -->
-<button id="upload_button" disabled>Upload to Amazon S3</button>
+				<div class="collapse navbar-collapse" id="navbarItems">
+					<ul class="navbar-nav ml-auto">
+						<li class="nav-item">
+							<a class="nav-link" href="#">Info</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#">Github</a>
+						</li>
+					</ul>
+				</div>
+			</nav>
 
-<progress id="progress" max="1" value="0">
-</form>
+			<main role="main" class="container">
+				
+				<form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
+				<div id="presign_post_attributes"></div>
+				<input type="hidden" name="Content-Type" />
+				<div class="row p-5 flex-grow-1">
+					<div class="col">
+						<div class="d-flex flex-grow-1 p-5 bd-highlight align-content-stretch border">
+							<input type="file" name="file" id="file" /><br>
+							<!-- Don't name this button "submit" or jQuery will get confused -->
+							<button id="upload_button" disabled>Upload to Amazon S3</button>
+						</div>
+						<div class="progress">
+							<div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+						</div>
+						
+						{% if captcha_enabled %}
+						<div id='recaptcha' class="g-recaptcha" data-sitekey="{{ captcha_site_key }}" data-callback="start_upload_file" data-size="invisible"></div>
+						{% endif %}
+					</div>
+				</div>
 
-{% if captcha_enabled %}
-	<script src='https://www.google.com/recaptcha/api.js'></script>
-{% endif %}
+				<div class="row">
+					<div class="col">
+						<small class="form-text text-muted">Storage duration: 1 day</small>
+						<small class="form-text text-muted">Maximum file size: {{ file_size_limit_human }}</small>
+						{% if upload_rate_limit != "" %}
+						<small class="form-text text-muted">Maximum uploads per IP address: {{ upload_rate_limit }}</small>
+						{% endif %}
+					</div>
+				</div>
 
-<script>
-function start_upload_file(captcha_token=''){
-	$("#uploadForm #upload_button").prop('disabled', true);
+				</form>
+			</main>
+		</div>
 
-	//Request for a presigned POST URL
-	$.post('/get_presigned_post', {'g-recaptcha-response': captcha_token}, (data) => {
-		//Put the fields and action URL into the form
-		$('#uploadForm').attr("action", data['url']);
-		$('#presign_post_attributes').empty();
-		for (var attribute in data['fields']){
-			$('#presign_post_attributes').append(
-				`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
-			);
+		{% if captcha_enabled %}
+			<script src='https://www.google.com/recaptcha/api.js'></script>
+		{% endif %}
+
+		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+		<script>
+		function start_upload_file(captcha_token=''){
+			$("#uploadForm #upload_button").prop('disabled', true);
+
+			//Request for a presigned POST URL
+			$.post('/get_presigned_post',
+				{'filename': $("#uploadForm #file")[0].files[0].name, 'g-recaptcha-response': captcha_token},
+				(data) => {
+				//Put the fields and action URL into the form
+				$('#uploadForm').attr("action", data['url']);
+				$('#presign_post_attributes').empty();
+				for (var attribute in data['fields']){
+					$('#presign_post_attributes').append(
+						`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
+					);
+				}
+
+				//Send the request
+				$.ajax({
+					xhr: () => {
+						var xhr = new window.XMLHttpRequest();
+						xhr.upload.addEventListener("progress", (event) => {
+							if (event.lengthComputable) {
+								percentageUploaded = event.loaded*100/event.total
+								$('#progress').css('width', percentageUploaded+'%').attr('aria-valuenow', percentageUploaded); 
+							}
+					   }, false);
+
+					   return xhr;
+					},
+					method: 'POST',
+					url: $('#uploadForm').attr('action'),
+					data: new FormData($('#uploadForm')[0]),
+					crossDomain: true,
+					processData: false,
+					contentType: false,
+					error: (jqXHR) => {
+						alert("TODO: Something went wrong!\n"+jqXHR.responseText)
+					},
+					success: (data) => {
+						location.href = data;
+					}
+				});
+
+			}, 'json').fail(
+				function(jqXHR, statusCode) {
+					window.alert(jqXHR.responseText);
+				}
+			)
 		}
 
-		//Send the request
-		$.ajax({
-			xhr: () => {
-				var xhr = new window.XMLHttpRequest();
-				xhr.upload.addEventListener("progress", (event) => {
-					if (event.lengthComputable) {
-						$('#progress').val(event.loaded/event.total);
-					}
-			   }, false);
-
-			   return xhr;
-			},
-			method: 'POST',
-			url: $('#uploadForm').attr('action'),
-			data: new FormData($('#uploadForm')[0]),
-			crossDomain: true,
-			processData: false,
-			contentType: false,
-			error: (jqXHR) => {
-				alert("TODO: Something went wrong!\n"+jqXHR.responseText)
-			},
-			success: (data) => {
-				location.href = data;
+		$("#uploadForm #file").on("change", function(eventObject) {
+			if(this.files.length>0){
+				var file = this.files[0];
+				if(file.size<={{ file_size_limit }}){
+					$("#uploadForm input[name=Content-Type]").val(file.type);
+					$("#uploadForm #upload_button").prop('disabled', false);
+					grecaptcha.execute();
+				}else{
+					this.value = "";
+					window.alert("FAILED! File too large!");
+					$("#uploadForm #upload_button").prop('disabled', true);
+				}
+			}else{
+				$("#uploadForm #upload_button").prop('disabled', true);
 			}
 		});
 
-	}, 'json').fail(
-		function(jqXHR, statusCode) {
-			window.alert(jqXHR.responseText);
-		}
-	)
-}
-
-$("#uploadForm #file").on("change", function(eventObject) {
-	if(this.files.length>0){
-		var file = this.files[0];
-		if(file.size<={{ fileSizeLimit }}){
-			$("#uploadForm input[name=Content-Type]").val(file.type);
-			$("#uploadForm #upload_button").prop('disabled', false);
-		}else{
-			this.value = "";
-			window.alert("FAILED! File too large!");
-			$("#uploadForm #upload_button").prop('disabled', true);
-		}
-	}else{
-		$("#uploadForm #upload_button").prop('disabled', true);
-	}
-});
-
-$('#uploadForm').submit(() => {
-{% if captcha_enabled %}
-	grecaptcha.execute();
-{% else %}
-	start_upload_file();
-{% endif %}
-	return false;
-});
-</script>
+		$('#uploadForm').submit(() => {
+		{% if captcha_enabled %}
+			grecaptcha.execute();
+		{% else %}
+			start_upload_file();
+		{% endif %}
+			return false;
+		});
+		</script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+	</body>
+</html>

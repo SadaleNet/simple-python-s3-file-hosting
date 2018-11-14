@@ -53,7 +53,6 @@ def homepage():
 @limiter.limit(os.getenv('UPLOAD_RATE_LIMIT', ''), error_message="Daily upload limit exceeded.\nPlease try again tomorrow.")
 def get_presigned_post():
     if is_captcha_enabled():
-        print(flask.request.args.get('g-recaptcha-response'))
         request = urllib.request.Request('https://www.google.com/recaptcha/api/siteverify',
             data=urllib.parse.urlencode(
                 {'secret': os.getenv('CAPTCHA_SECRET_KEY'), 'response': flask.request.form.get('g-recaptcha-response')}
@@ -66,7 +65,7 @@ def get_presigned_post():
     s3 = boto3.client('s3')
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
-        Key=get_s3_current_servicec_provider_envvar('PREFIX')+str(uuid.uuid4())+get_s3_current_servicec_provider_envvar('SUFFIX'),
+        Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=flask.request.form.get('filename')),
         Conditions=[
             {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
