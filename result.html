@@ -87,7 +87,7 @@
 					}else if(jqXHR.getResponseHeader("Content-Type").startsWith('text')){
 						$('#file-preview').replaceWith('<object class="mx-auto w-100 flex-grow-1 border" data="{{ fileName }}"></object>');
 					}else{ //Pop up a file download dialog
-						$('#file-preview').replaceWith('<iframe class="invisible" src="{{ fileName }}" sandbox=""></iframe>');
+						$('#file-preview').append('File preview unavailable. Please download it <a href="{{ fileName }}">here</a>');
 					}
 					
 				}
