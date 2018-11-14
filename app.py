@@ -80,7 +80,14 @@ def uploaded():
 def result(service_provider, filename):
     with open('result.html') as f:
         template = Template(f.read())
-    return template.render(fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}")
+    #Remove the quotes to eliminate security risk
+    #Due to the handling of quote escape is different between HTML and Javascript, there's no easy way to come up with
+    #a universal way to handle quote escape. So we just remove them instead of escaping them
+    filename = filename.replace('"', '').replace("'", "")
+    return template.render(
+            service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}"
+    )
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
