@@ -25,9 +25,15 @@ S3_UPLOAD_GRACE_PERIOD = 10
 def get_s3_current_servicec_provider_envvar(var):
     return os.getenv(f"S3_{os.getenv('S3_CURRENT_SERVICE_PROVIDER')}_{var}")
 
-def is_captcha_enabled():
-    return os.getenv('CAPTCHA_ENABLED', 'N').upper() != 'N'
 
+def is_env_enabled(env_value):
+    return env_value.upper() != 'N'
+
+def is_captcha_enabled():
+    return is_env_enabled(os.getenv('CAPTCHA_ENABLED', 'N'))
+
+def is_cloudflare_file_extension_rewrite_enabled():
+    return is_env_enabled(get_s3_current_servicec_provider_envvar("CLOUDFLARE_FILE_EXTENSION_REWRITE"))
 
 def humanBytesToValue(humanReadableBytes):
     units = {"B": 1, "KB": 10**3, "MB": 10**6, "GB": 10**9, "TB": 10**12,
@@ -62,10 +68,18 @@ def get_presigned_post():
         if not json.loads(response.read().decode('utf-8'))["success"]:
             return flask.Response("INVALID CAPTCHA!", status=401)
 
+    filename = flask.request.form.get('filename')
+    if is_cloudflare_file_extension_rewrite_enabled():
+        static_content_file_extensions = ['.bmp', '.css', '.csv', '.doc', '.docx', '.ejs', '.eot', '.eps', '.gif', '.ico', '.jar', '.jpeg', '.jpg', '.js', '.mid', '.midi', '.otf', '.pdf', '.pict', '.pls', '.png', '.ppt', '.pptx', '.ps', '.svg', '.svgz', '.swf', '.tif', '.tiff', '.ttf, class', '.webp', '.woff', '.woff2', '.xls', '.xlsx'] #See https://support.cloudflare.com/hc/en-us/articles/200172516-Which-file-extensions-does-Cloudflare-cache-for-static-content-
+
+        #If the file extension isn't the static one, append the default file extension to the filename
+        if sum([filename.endswith(i) for i in static_content_file_extensions]) == 0:
+            filename += get_s3_current_servicec_provider_envvar('CLOUDFLARE_DEFAULT_FILE_EXTENSION')
+
     s3 = boto3.client('s3')
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
-        Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=flask.request.form.get('filename')),
+        Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=filename),
         Conditions=[
             {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
