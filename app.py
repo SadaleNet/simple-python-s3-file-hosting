@@ -28,13 +28,22 @@ def get_s3_current_servicec_provider_envvar(var):
 def is_captcha_enabled():
     return os.getenv('CAPTCHA_ENABLED', 'N').upper() != 'N'
 
+
+def humanBytesToValue(humanReadableBytes):
+    units = {"B": 1, "KB": 10**3, "MB": 10**6, "GB": 10**9, "TB": 10**12,
+                "KIB": 2**10, "MIB": 2**20, "GIB": 2**30, "TIB": 2**40}
+    number, unit = [string.upper().strip() for string in humanReadableBytes.split()]
+    return int(float(number)*units[unit])
+
 @app.route("/")
 def homepage():
     print(flask.request.url_root)
     with open('upload.html') as f:
         template = Template(f.read())
     return template.render(
-            fileSizeLimit=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
+            service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            file_size_limit_human=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
+            file_size_limit=humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE")),
             captcha_enabled=is_captcha_enabled(),
             captcha_site_key=os.getenv('CAPTCHA_SITE_KEY', ''),
             upload_rate_limit=os.getenv('UPLOAD_RATE_LIMIT', '')
@@ -59,7 +68,7 @@ def get_presigned_post():
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
         Key=get_s3_current_servicec_provider_envvar('PREFIX')+str(uuid.uuid4())+get_s3_current_servicec_provider_envvar('SUFFIX'),
         Conditions=[
-            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, int(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
+            {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
         Fields={"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}", "success_action_redirect": f"{flask.request.url_root}uploaded"},
         ExpiresIn=S3_UPLOAD_GRACE_PERIOD
