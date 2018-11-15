@@ -40,6 +40,10 @@ def humanBytesToValue(humanReadableBytes):
 def homepage():
     return flask.render_template('upload.html', 
             service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            upload_remarks=os.getenv('UPLOAD_REMARKS', ''),
+            backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
+            hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
+            contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
             file_size_limit_human=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
             file_size_limit=humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE")),
             captcha_enabled=is_captcha_enabled(),
@@ -105,9 +109,22 @@ def result(service_provider, filename):
     filename = filename.replace('"', '').replace("'", "")
     return flask.render_template('result.html', 
             service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            result_remarks=os.getenv('RESULT_REMARKS', ''),
+            backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
+            hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
+            contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
             fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}"
     )
 
+@app.route("/info")
+def info():
+    return flask.render_template('info.html',
+        service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+        backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
+        hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
+        contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
+    )
+    
 @app.route('/robots.txt')
 def robots_txt():
     return "User-agent: *\nDisallow: /view/\nDisallow: /uploaded"
