@@ -113,6 +113,10 @@ def result(service_provider, filename):
             fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}"
     )
 
+@app.route('/robots.txt')
+def robots_txt():
+    return "User-agent: *\nDisallow: /view/\nDisallow: /uploaded"
+
 @app.errorhandler(429)
 def ratelimit_handler(e):
     return flask.Response(e.description, status=401)
