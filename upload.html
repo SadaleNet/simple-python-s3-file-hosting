@@ -128,7 +128,11 @@
 				if(file.size<={{ file_size_limit }}){
 					$("#uploadForm input[name=Content-Type]").val(file.type);
 					$("#uploadForm #upload_button").prop('disabled', false);
-					grecaptcha.execute();
+					{% if captcha_enabled %}
+						grecaptcha.execute();
+					{% else %}
+						start_upload_file();
+					{% endif %}
 				}else{
 					this.value = "";
 					window.alert("FAILED! File too large!");
