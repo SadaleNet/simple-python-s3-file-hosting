@@ -6,7 +6,7 @@
 		<meta name="robots" content="noindex">
 		<meta name="description" content="">
 
-		<title>{{ service_name }}</title>
+		<title>View File | {{ service_name }}</title>
 
 		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -32,7 +32,7 @@
 				</div>
 			</nav>
 			
-			<div class="container flex-column d-flex h-100">
+			<main class="container flex-column d-flex h-100">
 				<div class="p-1 mx-auto">
 					<div class="d-flex justify-content-center align-items-center">
 						<div class="text-nowrap text-center pr-1">Direct link:</div>
@@ -44,13 +44,14 @@
 						</div>
 					</div>
 				</div>
-					<noscript class="text-center">
-						Javascript is required for displaying file preview.<br>
-						Please use the direct link instead.
-					</noscript>
 
-					<span id="file-preview" class="mx-auto">
-					</span>
+				<noscript class="text-center text-danger font-weight-bold">
+					Javascript is required for displaying file preview.<br>
+					Please use the direct link above instead.
+				</noscript>
+
+				<span id="file-preview" class="mx-auto">
+				</span>
 					
 				<div class="mx-auto">
 					<small>This site hosts user-uploaded content. The operator of the site is not responsible for the content uploaded.</small>
@@ -59,7 +60,7 @@
 					<small>All uploaded files will be removed after a day.</small>
 				</div>
 			</div>
-		</div>
+		</main>
 
 
 		<script>
