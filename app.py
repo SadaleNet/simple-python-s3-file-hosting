@@ -69,17 +69,19 @@ def get_presigned_post():
             return flask.Response("INVALID CAPTCHA!", status=401)
 
     filename = flask.request.form.get('filename')
+    file_extension = os.path.splitext(filename)[1]
+    cloudflare_suffix = ''
     if is_cloudflare_file_extension_rewrite_enabled():
         static_content_file_extensions = ['.bmp', '.css', '.csv', '.doc', '.docx', '.ejs', '.eot', '.eps', '.gif', '.ico', '.jar', '.jpeg', '.jpg', '.js', '.mid', '.midi', '.otf', '.pdf', '.pict', '.pls', '.png', '.ppt', '.pptx', '.ps', '.svg', '.svgz', '.swf', '.tif', '.tiff', '.ttf, class', '.webp', '.woff', '.woff2', '.xls', '.xlsx'] #See https://support.cloudflare.com/hc/en-us/articles/200172516-Which-file-extensions-does-Cloudflare-cache-for-static-content-
 
         #If the file extension isn't the static one, append the default file extension to the filename
         if sum([filename.endswith(i) for i in static_content_file_extensions]) == 0:
-            filename += get_s3_current_servicec_provider_envvar('CLOUDFLARE_DEFAULT_FILE_EXTENSION')
+            cloudflare_suffix = get_s3_current_servicec_provider_envvar('CLOUDFLARE_DEFAULT_FILE_EXTENSION')
 
     s3 = boto3.client('s3')
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
-        Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=filename),
+        Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=filename, file_extension=file_extension, cloudflare_suffix=cloudflare_suffix),
         Conditions=[
             {"success_action_redirect": f"{flask.request.url_root}uploaded"}, ["starts-with", "$Content-Type", ""], {"Cache-Control": f"max-age={get_s3_current_servicec_provider_envvar('CACHE_STORAGE_DURATION')}"}, ["content-length-range", 0, humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"))]
         ],
