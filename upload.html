@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-100">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -8,10 +8,21 @@
 		<title>{{ service_name }}</title>
 
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+		<style>
+			.drop-zone {
+				border-width:3px !important;
+				border-style: dashed !important;
+				border-color: rgb(22, 22, 23) !important;
+			}
+			.drop-zone-active {
+				opacity: 0.3;
+			}
+		</style>
 	</head>
 
-	<body>
-		<div style="min-height: 100vh;">
+	<body class="h-100">
+		<div class="d-flex flex-column h-100">
 			<nav class="navbar navbar-expand-lg navbar-light bg-light">
 				<a class="navbar-brand" href="/">{{ service_name }}</a>
 					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarItems" aria-controls="navbarItems" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,40 +41,61 @@
 				</div>
 			</nav>
 
-			<main role="main" class="container">
-				
-				<form id="uploadForm" action="#" method="post" enctype="multipart/form-data">
-				<div id="presign_post_attributes"></div>
-				<input type="hidden" name="Content-Type" />
-				<div class="row p-5 flex-grow-1">
-					<div class="col">
-						<div class="d-flex flex-grow-1 p-5 bd-highlight align-content-stretch border">
-							<input type="file" name="file" id="file" /><br>
-							<!-- Don't name this button "submit" or jQuery will get confused -->
-							<button id="upload_button" disabled>Upload to Amazon S3</button>
-						</div>
-						<div class="progress">
-							<div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-						
-						{% if captcha_enabled %}
-						<div id='recaptcha' class="g-recaptcha" data-sitekey="{{ captcha_site_key }}" data-callback="start_upload_file" data-size="invisible"></div>
-						{% endif %}
-					</div>
-				</div>
+			<main class="container flex-column d-flex h-100 p-2">
+				<form class="d-flex flex-column flex-grow-1" id="uploadForm" action="#" method="post" enctype="multipart/form-data">
+					<div id="presign_post_attributes"></div>
+					<input type="hidden" name="Content-Type" />
 
-				<div class="row">
-					<div class="col">
+					<div id="upload-drop-zone" class="d-flex flex-column mx-auto flex-grow-1 w-100 h-100 justify-content-center align-items-center border drop-zone" draggable="true">
+						<div class="mx-auto" style="font-size: larger; pointer-events: none;">Drop a file here to upload</div>
+						<div class="mx-auto" style="pointer-events: none;">Or pick a file here:</div>
+						<div class="mx-auto">
+							<div class="custom-file mx-auto">
+								<input type="file" name="file" class="custom-file-input" id="file" disabled />
+								<label id="filename" class="custom-file-label" for="file">Choose a file</label>
+							</div>
+						</div>
+						<noscript class="text-danger font-weight-bold">
+							Sorry. Javascript is required for file upload.
+						</noscript>
+					</div>
+					<div class="progress">
+						<div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+					</div>
+					
+					{% if captcha_enabled %}
+					<div id='recaptcha' class="g-recaptcha" data-sitekey="{{ captcha_site_key }}" data-callback="start_upload_file" data-size="invisible"></div>
+					{% endif %}
+
+					<div class="p-2">
 						<small class="form-text text-muted">Storage duration: 1 day</small>
 						<small class="form-text text-muted">Maximum file size: {{ file_size_limit_human }}</small>
 						{% if upload_rate_limit != "" %}
 						<small class="form-text text-muted">Maximum uploads per IP address: {{ upload_rate_limit }}</small>
+						<small class="form-text text-muted">This service will upload your files to AWS S3. By uploading files using this site, you agree with the terms of service of AWS S3. </small>
 						{% endif %}
 					</div>
-				</div>
-
 				</form>
 			</main>
+		</div>
+
+		<div id="error-dialog" class="modal" tabindex="-1" role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title font-weight-bold text-danger" id="dialog-title"></h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<p id="dialog-message"></p>
+						</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		{% if captcha_enabled %}
@@ -72,8 +104,33 @@
 
 		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 		<script>
+		$("#uploadForm #file").prop('disabled', false);
+
+		//Drop zone handling
+		$("#upload-drop-zone")[0].ondrop = (event) => {
+			event.preventDefault();
+			$("#uploadForm #file")[0].files = event.dataTransfer.files;
+			$("#uploadForm #file").trigger('change');
+			$(event.target).removeClass('drop-zone-active')
+		};
+		$("#upload-drop-zone")[0].ondragover = (event) => {
+			$(event.target).addClass('drop-zone-active');
+			return false;
+		};
+		$("#upload-drop-zone")[0].ondragleave = (event) => {
+			$(event.target).removeClass('drop-zone-active');
+			return false;
+		};
+		
+		
+		function show_error_message(title, message){
+			$('#dialog-title').text(title);
+			$('#dialog-message').text(message);
+			$('#error-dialog').modal();
+		}
+
 		function start_upload_file(captcha_token=''){
-			$("#uploadForm #upload_button").prop('disabled', true);
+			$("#uploadForm #file").prop('disabled', true); //Prevent the user from selecting a new file once the upload had started
 
 			//Request for a presigned POST URL
 			$.post('/get_presigned_post',
@@ -87,6 +144,11 @@
 						`<input type="hidden" name="${attribute}" value="${data['fields'][attribute]}" />`
 					);
 				}
+				
+				//Temporarily re-enabling the file input so that it can get saved into the formData. That's because disabled inputs are not sendable
+				$("#uploadForm #file").prop('disabled', false);
+				formData = new FormData($('#uploadForm')[0]);
+				$("#uploadForm #file").prop('disabled', true);
 
 				//Send the request
 				$.ajax({
@@ -103,12 +165,12 @@
 					},
 					method: 'POST',
 					url: $('#uploadForm').attr('action'),
-					data: new FormData($('#uploadForm')[0]),
+					data: formData,
 					crossDomain: true,
 					processData: false,
 					contentType: false,
 					error: (jqXHR) => {
-						alert("TODO: Something went wrong!\n"+jqXHR.responseText)
+						show_error_message("Server Error", jqXHR.responseText);
 					},
 					success: (data) => {
 						location.href = data;
@@ -117,17 +179,17 @@
 
 			}, 'json').fail(
 				function(jqXHR, statusCode) {
-					window.alert(jqXHR.responseText);
+					show_error_message("Error", jqXHR.responseText);
 				}
 			)
 		}
 
 		$("#uploadForm #file").on("change", function(eventObject) {
-			if(this.files.length>0){
+			if(this.files.length==1){
 				var file = this.files[0];
 				if(file.size<={{ file_size_limit }}){
 					$("#uploadForm input[name=Content-Type]").val(file.type);
-					$("#uploadForm #upload_button").prop('disabled', false);
+					$("#uploadForm #filename").html(file.name);
 					{% if captcha_enabled %}
 						grecaptcha.execute();
 					{% else %}
@@ -135,11 +197,10 @@
 					{% endif %}
 				}else{
 					this.value = "";
-					window.alert("FAILED! File too large!");
-					$("#uploadForm #upload_button").prop('disabled', true);
+					show_error_message("File Too Large", "This file is too large. The file size limit is {{ file_size_limit_human }}");
 				}
-			}else{
-				$("#uploadForm #upload_button").prop('disabled', true);
+			}else if(this.files.length>1){
+				show_error_message("Multiple Files Unsupported", "We do not support uploading multiple files at a time");
 			}
 		});
 
