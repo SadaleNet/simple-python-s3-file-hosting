@@ -36,4 +36,4 @@ export UPLOAD_RATE_LIMIT="10 per day"
 export UPLOAD_RATE_LIMIT_STORAGE="memory://"
 export SERVICE_NAME="Python S3 Simple File Hosting"
 
-FLASK_APP=app.py flask run -h 0.0.0.0 -p 5000
+FLASK_APP=./app/app.py flask run -h 0.0.0.0 -p 5000
