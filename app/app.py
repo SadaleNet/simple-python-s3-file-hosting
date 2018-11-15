@@ -38,10 +38,7 @@ def humanBytesToValue(humanReadableBytes):
 
 @app.route("/")
 def homepage():
-    print(flask.request.url_root)
-    with open('upload.html') as f:
-        template = Template(f.read())
-    return template.render(
+    return flask.render_template('upload.html', 
             service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
             file_size_limit_human=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
             file_size_limit=humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE")),
@@ -102,13 +99,11 @@ def uploaded():
 
 @app.route('/view/<string:service_provider>/<path:filename>')
 def result(service_provider, filename):
-    with open('result.html') as f:
-        template = Template(f.read())
     #Remove the quotes to eliminate security risk
     #Due to the handling of quote escape is different between HTML and Javascript, there's no easy way to come up with
     #a universal way to handle quote escape. So we just remove them instead of escaping them
     filename = filename.replace('"', '').replace("'", "")
-    return template.render(
+    return flask.render_template('result.html', 
             service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
             fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}"
     )
