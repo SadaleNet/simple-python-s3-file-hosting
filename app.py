@@ -66,9 +66,12 @@ def get_presigned_post():
         method='POST')
         response = urllib.request.urlopen(request)
         if not json.loads(response.read().decode('utf-8'))["success"]:
-            return flask.Response("INVALID CAPTCHA!", status=401)
+            return flask.Response("Invalid Captcha", status=401)
 
     filename = flask.request.form.get('filename')
+    if '/' in filename or '\\' in filename:
+        return flask.Response("Invalid Filename", status=400)
+
     file_extension = os.path.splitext(filename)[1]
     cloudflare_suffix = ''
     if is_cloudflare_file_extension_rewrite_enabled():
