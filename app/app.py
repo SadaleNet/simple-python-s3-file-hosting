@@ -20,6 +20,12 @@ limiter = flask_limiter.Limiter(
 )
 
 S3_UPLOAD_GRACE_PERIOD = 10
+DEFAULT_SERVICE_NAME = 'Simple Python S3 File Hosting'
+DEFAULT_UPLOAD_REMARKS = ''
+DEFAULT_RESULT_REMARKS = ''
+DEFAULT_BACKEND_NAME = '[backend name]'
+DEFAULT_HOSTER_NAME = '[hoster name]'
+DEFAULT_CONTACT_EMAIL = '[contact name]'
 
 def get_s3_current_servicec_provider_envvar(var, default=''):
     return os.getenv(f"S3_{os.getenv('S3_CURRENT_SERVICE_PROVIDER')}_{var}", default)
@@ -39,11 +45,11 @@ def humanBytesToValue(humanReadableBytes):
 @app.route("/")
 def homepage():
     return flask.render_template('upload.html', 
-            service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
-            upload_remarks=os.getenv('UPLOAD_REMARKS', ''),
-            backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
-            hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
-            contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
+            service_name=os.getenv('SERVICE_NAME', DEFAULT_SERVICE_NAME),
+            upload_remarks=os.getenv('UPLOAD_REMARKS', DEFAULT_UPLOAD_REMARKS),
+            backend_name=os.getenv('BACKEND_NAME', DEFAULT_BACKEND_NAME),
+            hoster_name=os.getenv('HOSTER_NAME', DEFAULT_HOSTER_NAME),
+            contact_email=os.getenv('CONTACT_EMAIL', DEFAULT_CONTACT_EMAIL),
             file_size_limit_human=get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE"),
             file_size_limit=humanBytesToValue(get_s3_current_servicec_provider_envvar("MAX_FILE_SIZE")),
             captcha_enabled=is_captcha_enabled(),
@@ -108,21 +114,21 @@ def result(service_provider, filename):
     #a universal way to handle quote escape. So we just remove them instead of escaping them
     filename = filename.replace('"', '').replace("'", "")
     return flask.render_template('result.html', 
-            service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
-            result_remarks=os.getenv('RESULT_REMARKS', ''),
-            backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
-            hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
-            contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
+            service_name=os.getenv('SERVICE_NAME', DEFAULT_SERVICE_NAME),
+            result_remarks=os.getenv('RESULT_REMARKS', DEFAULT_RESULT_REMARKS),
+            backend_name=os.getenv('BACKEND_NAME', DEFAULT_BACKEND_NAME),
+            hoster_name=os.getenv('HOSTER_NAME', DEFAULT_HOSTER_NAME),
+            contact_email=os.getenv('CONTACT_EMAIL', DEFAULT_CONTACT_EMAIL),
             fileName=f"{get_s3_current_servicec_provider_envvar('CLOUDFLARE_ROOT')}/{filename}"
     )
 
 @app.route("/info")
 def info():
     return flask.render_template('info.html',
-        service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
-        backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
-        hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
-        contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
+        service_name=os.getenv('SERVICE_NAME', DEFAULT_SERVICE_NAME),
+        backend_name=os.getenv('BACKEND_NAME', DEFAULT_BACKEND_NAME),
+        hoster_name=os.getenv('HOSTER_NAME', DEFAULT_HOSTER_NAME),
+        contact_email=os.getenv('CONTACT_EMAIL', DEFAULT_CONTACT_EMAIL),
     )
     
 @app.route('/robots.txt')
