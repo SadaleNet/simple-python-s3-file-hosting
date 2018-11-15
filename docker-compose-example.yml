@@ -36,7 +36,7 @@ services:
       UPLOAD_RATE_LIMIT: "10 per day"
       #Database for storing the upload limit. See the documentation of flask-limiter.
       UPLOAD_RATE_LIMIT_STORAGE: "redis://redis:6379"
-      SERVICE_NAME: "Python S3 Simple File Hosting"
+      SERVICE_NAME: "Simple Python S3 File Hosting"
     ports:
       - "80:80"
     depends_on:

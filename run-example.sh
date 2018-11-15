@@ -34,6 +34,6 @@ export CAPTCHA_SECRET_KEY="<your-recaptcha-secret-key-goes-here>"
 export UPLOAD_RATE_LIMIT="10 per day"
 #Database for storing the upload limit. See the documentation of flask-limiter.
 export UPLOAD_RATE_LIMIT_STORAGE="memory://"
-export SERVICE_NAME="Python S3 Simple File Hosting"
+export SERVICE_NAME="Simple Python S3 File Hosting"
 
 FLASK_APP=./app/app.py flask run -h 0.0.0.0 -p 5000
