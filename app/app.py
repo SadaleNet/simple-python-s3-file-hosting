@@ -75,7 +75,10 @@ def get_presigned_post():
     if sum([filename.endswith(i) for i in static_content_file_extensions]) == 0:
         cloudflare_suffix = get_s3_current_servicec_provider_envvar('CLOUDFLARE_DEFAULT_FILE_EXTENSION')
 
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3',
+        aws_access_key_id=get_s3_current_servicec_provider_envvar('ACCESS_KEY_ID'),
+        aws_secret_access_key=get_s3_current_servicec_provider_envvar('SECRET_ACCESS_KEY')
+    )
     presigned_post = s3.generate_presigned_post(
         Bucket=get_s3_current_servicec_provider_envvar("BUCKET"),
         Key=get_s3_current_servicec_provider_envvar('FILENAME').format(uuid=uuid.uuid4(), filename=filename, file_extension=file_extension, cloudflare_suffix=cloudflare_suffix),
