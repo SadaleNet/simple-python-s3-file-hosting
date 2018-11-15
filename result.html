@@ -71,7 +71,7 @@
 				cache: false, //Invalidating existing cache as a workaround of https://bugs.chromium.org/p/chromium/issues/detail?id=260239
 				crossDomain: true,
 				error: (jqXHR, textStatus, errorThrown) => {
-					window.alert("TODO: File preview failed");
+					$('#file-preview').text('File preview failed.');
 				},
 				success: (data, textStatus, jqXHR) => {
 					$('#file-preview').empty();
