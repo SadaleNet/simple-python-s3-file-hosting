@@ -36,8 +36,19 @@ services:
       UPLOAD_RATE_LIMIT: "10 per day"
       #Database for storing the upload limit. See the documentation of flask-limiter.
       UPLOAD_RATE_LIMIT_STORAGE: "redis://redis:6379"
+
       #The name of the server instance
       SERVICE_NAME: "Simple Python S3 File Hosting"
+      #The name of the hoster
+      HOSTER_NAME: "Anonymous"
+      #The name of the backend. The user has to comply to their terms of service to upload the files. Example: "AWS S3", "Google Cloud Storage".
+      BACKEND_NAME: "AWS S3"
+      #Contact email in case of abuse.
+      CONTACT_EMAIL: "[contact email]"
+      #Remarks shown on the upload page. Example: "Storage duration: 1 day"
+      UPLOAD_REMARKS: ""
+      #Remarks shown on the view file page. Example: "All uploaded files will be removed after a day."
+      RESULT_REMARKS: ""
     ports:
       - "80:80"
     depends_on:
