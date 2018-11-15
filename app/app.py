@@ -39,7 +39,7 @@ def humanBytesToValue(humanReadableBytes):
 @app.route("/")
 def homepage():
     return flask.render_template('upload.html', 
-            service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
             upload_remarks=os.getenv('UPLOAD_REMARKS', ''),
             backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
             hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
@@ -108,7 +108,7 @@ def result(service_provider, filename):
     #a universal way to handle quote escape. So we just remove them instead of escaping them
     filename = filename.replace('"', '').replace("'", "")
     return flask.render_template('result.html', 
-            service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+            service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
             result_remarks=os.getenv('RESULT_REMARKS', ''),
             backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
             hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
@@ -119,7 +119,7 @@ def result(service_provider, filename):
 @app.route("/info")
 def info():
     return flask.render_template('info.html',
-        service_name=os.getenv('SERVICE_NAME', 'S3 Temporary File Upload'),
+        service_name=os.getenv('SERVICE_NAME', 'Simple Python S3 File Hosting'),
         backend_name=os.getenv('BACKEND_NAME', '[backend name]'),
         hoster_name=os.getenv('HOSTER_NAME', '[hoster name]'),
         contact_email=os.getenv('CONTACT_EMAIL', '[contact email]'),
