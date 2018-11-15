@@ -23,7 +23,7 @@ export S3_AWS_CACHE_STORAGE_DURATION="86400"
 #AWS credentials.
 export S3_AWS_ACCESS_KEY_ID="<your-aws-access-key-id-goes-here>"
 export S3_AWS_SECRET_ACCESS_KEY="<your-aws-secret-access-key-goes-here>"
-#The service provider. The of S3_*_BUCKET, S3_*_BACKEND_TYPE, etc.
+#The service provider. The * of S3_*_BUCKET, S3_*_BACKEND_TYPE, etc.
 export S3_CURRENT_SERVICE_PROVIDER="AWS"
 #Choose if enable Recaptcha v2 invisible. Anything not "N" or "n" means yes.
 export CAPTCHA_ENABLED="N"

@@ -25,7 +25,7 @@ services:
       #AWS credentials.
       S3_AWS_ACCESS_KEY_ID: "<your-aws-access-key-id-goes-here>"
       S3_AWS_SECRET_ACCESS_KEY: "<your-aws-secret-access-key-goes-here>"
-      #The service provider. The of S3_*_BUCKET, S3_*_BACKEND_TYPE, etc.
+      #The service provider. The * of S3_*_BUCKET, S3_*_BACKEND_TYPE, etc.
       S3_CURRENT_SERVICE_PROVIDER: "AWS"
       #Choose if enable Recaptcha v2 invisible. Anything not "N" or "n" means yes.
       CAPTCHA_ENABLED: "N"
