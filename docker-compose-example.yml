@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   web:
-    image: simple-python-s3-file-hosting:latest
+    image: sadalenet/simple-python-s3-file-hosting:latest
     environment:
       #The name of the AWS bucket
       S3_AWS_BUCKET: "<your-bucket-name-goes-here>"
