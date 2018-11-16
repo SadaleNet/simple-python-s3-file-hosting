@@ -11,6 +11,7 @@ import flask
 import flask_limiter
 import flask_limiter.util
 from jinja2 import Template
+from werkzeug.contrib.fixers import ProxyFix
 app = Flask(__name__)
 limiter = flask_limiter.Limiter(
     app,
@@ -41,6 +42,9 @@ def humanBytesToValue(humanReadableBytes):
                 "KIB": 2**10, "MIB": 2**20, "GIB": 2**30, "TIB": 2**40}
     number, unit = [string.upper().strip() for string in humanReadableBytes.split()]
     return int(float(number)*units[unit])
+
+if is_env_enabled(os.getenv('REVERSE_PROXY_FIX', 'N')):
+    app.wsgi_app = ProxyFix(app.wsgi_app)
 
 @app.route("/")
 def homepage():

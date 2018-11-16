@@ -35,6 +35,9 @@ export UPLOAD_RATE_LIMIT="10 per day"
 #Database for storing the upload limit. See the documentation of flask-limiter.
 export UPLOAD_RATE_LIMIT_STORAGE="memory://"
 
+#Enable this if you're using a reverse proxy. With proper configuration of the reserve proxy server, it fixes the scheme and IP address. Defaults to "N". Anything other than "N" means yes. Do not enable this if you aren't using reverse proxy or that would allow the attackers to spoof their IP address. See http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups
+export REVERSE_PROXY_FIX="N"
+
 #The name of the server instance
 export SERVICE_NAME="Simple Python S3 File Hosting"
 #The name of the hoster
